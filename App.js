@@ -1,21 +1,56 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer} from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons} from '@expo/vector-icons'
+import { createStackNavigator} from '@react-navigation/stack'
+import Mainpage from './pages/Mainpage';
+import Settings from './pages/Settings';
+import f1 from './pages/f1';
+import f2 from './pages/f2';
 
-export default function App() {
+const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+function HomeStackScreen(){
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    <Stack.Navigator>
+      <Stack.Screen name="Home" component={Mainpage}/>
+      <Stack.Screen name="Api,Checklist,ImgSlider" component={f1}/>
+      <Stack.Screen name="Camera,SqLite" component={f2}/>
+    </Stack.Navigator>
+  )
+}
+function SettingsStackScreen(){
+  return(
+    <Stack.Navigator>
+      <Stack.Screen name="Settings" component={Settings}/>
+    </Stack.Navigator>
+  )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+
+
+  return (
+    
+    <NavigationContainer>
+      <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size}) => {
+          let iconName;
+          if (route.name === 'Home') {
+            iconName = 'md-home';
+          }
+          else if (route.name === 'Settings'){
+            iconName = 'md-settings';
+          }
+          return <Ionicons name={iconName} size={size} color={color}/>;
+        },
+      })}>
+        <Tab.Screen name="Home" component={HomeStackScreen} />
+        <Tab.Screen name="Settings" component={SettingsStackScreen} />
+      </Tab.Navigator>
+      </NavigationContainer>
+   
+  );
+}

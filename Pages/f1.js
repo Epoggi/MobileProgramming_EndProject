@@ -1,157 +1,152 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, FlatList } from 'react-native';
-import { Card,  } from 'react-native-elements';
-import { styles }  from '../stuff/Styles';
-import { SliderBox } from 'react-native-image-slider-box';
+import { Text, View, FlatList, Button } from 'react-native';
+import { Card, } from 'react-native-elements';
+import { styles } from '../stuff/Styles';
 import CheckBox from '@react-native-community/checkbox';
+import { catApi_key } from '../Private/config'
+import { Image } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 export default function f1() {
-   // Selected item tags
-   const [currentTags, setCurrentTags] = useState([]);
-   // List for all tags 
-   const [allTags, setAllTags] = useState([]);
-   const [activities, setActivities] = useState([]);
-   // List of selected tags
-   const [selectedTags, setSelectedTags] = useState([]);
-   // String inside the dataFetch url
-   const [fetchString, setFetchString] = useState('');
-   const getImages = (images) => images.map(image => image.url);
-   // Get list of activities and tags
-   let array = Object.values(allTags);
+    const [cats, setCats] = useState([]);
+    const [gats, setGats] = useState([]);
+    const [selectedGats, setSelectedGats] = useState([]);
+    const [gatId, setGatId] = useState('');
 
-   const dataFetch = () => {
-       let url = `http://open-api.myhelsinki.fi/v1/activities/?${fetchString}language_filter=fi&limit=20`
+   // let array = Object.values(gats);
 
-       fetch(url)
-           .then(response => response.json())
-           .then(data => {
-               setActivities(data.data);
-               setCurrentTags(data.tags);
-               if (allTags.length === 0) {
-                   setAllTags(data.tags)
-               }
-           })
-           .catch((error) => {
-               Alert.alert('Something went wrong', error);
-           })
-   }
-   //useEffect filter that changes when user selects new tags
-   useEffect(() => {
-       createFilterTagsString();
-   }, [selectedTags]);
+    const fetchGats = () => {
+        let url = `https://api.thecatapi.com/v1/categories`
 
-   //useEffect for new filter
-   useEffect(() => {
-       dataFetch();
-   }, [fetchString]);
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                setGats(data);
+            })
+            .catch((error) => {
+                Alert.alert('Something went wrong', error);
+            }) 
+    }
 
-   const createFilterTagsString = () => {
-       let str = ('tags_search=');
-       // For loop of selected tags and creating string to url
-       if (selectedTags.length > 0) {
-           for (let i = 0; i < selectedTags.length; i++) {
-               
-               if (selectedTags[i + 1]) {
-                   //If after a tag comes a tag
-                   str = str.concat(selectedTags[i].replace("&", "%26").replace(/\s+/g, "%20") + "%2C")
-               } else {
-                   //If a tag is the last one 
-                   str = str.concat(selectedTags[i].replace("&", "%26").replace(/\s+/g, "%20") + '&')
-               }
-               setFetchString(str)
-           }
-       }
-       else {
-           setFetchString('')
-       }
-   }
+    const fetchCats = () => {
+        let url = `https://api.thecatapi.com/v1/images/search?category_ids=${gatId}&limit=3&api_key=${catApi_key}`
 
-   const listSeparator = () => {
-       return (
-           <View style={{
-               height: 1,
-               width: "90%",
-               backgroundColor: "#CED0CE",
-               marginLeft: "10%"
-           }}
-           />
-       )
-   }
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                setCats(data);
+            })
+            .catch((error) => {
+                Alert.alert('Something went wrong', error);
+            })
+    }
+    useEffect(() => {
+        fetchGats();
+    }, []);
+    useEffect(() => {
+        fetchCats();
+    }, []);
+    useEffect(()=>{
+        fetchCats();
+    }, [gatId]);
 
-   //Change users selection of tags
-   const tagOnListOrNot = (newValue, tag) => {
-       if (newValue === true) {
-           setSelectedTags([...selectedTags, tag])
-       } else {
-           setSelectedTags(selectedTags.filter((current) => current !== tag))
-       }
-   }
+    const listSeparator = () => {
+        return (
+            <View style={{
+                height: 1,
+                width: "90%",
+                backgroundColor: "#CED0CE",
+                marginLeft: "10%"
+            }}
+            />
+        )
+    }
+
+    //Change users selection of tags
+    const categoryChecklist = (newValue, tag) => {
+        if (newValue === true) {
+            setSelectedGats([...selectedGats, tag])
+        } else {
+            setSelectedGats(selectedGats.filter((current) => current !== tag))
+        }
+    }
+
+    const clearFilter = () => {
+        setGatId('')
+    }
 
     const renderItem = ({ item }) => (
-       <View style={{ flexDirection: 'row' }}>
-           
-           <CheckBox
-               disabled={false}
-               value={
-                   selectedTags.indexOf(item) >= 0
-               }
-               onValueChange={(newValue) => { tagOnListOrNot(newValue, item) }}
-           //If oncheck value is true, add to list
-           />
-           <Text style={{width:80}}>{item}</Text>
-       </View>
-   )
- 
+        <View style={{ flexDirection: 'row' }}>
 
-   return (
-
-       <View style={styles.screen}>
-
-<View style={styles.smallcontainer}>
-
-<FlatList data={array}
-    keyExtractor={(item, index) => index.toString()}
-    ItemSeparatorComponent={listSeparator}
-    renderItem={renderItem} 
-    numColumns={3}
-    />
-</View>
-           <View style={styles.listcontainer}>    
-  <Text>MyHelsinki Apin kautta saamme listan aktiviteeteista ja tägeistä jotka niihin liittyy</Text>
-  <Text>Valitsemalla tägin, lista haetaan uudelleen, mutta urliin tulee tägin mukaan filtteröinti</Text>
-               <FlatList
-                   style={{ marginLeft: "0%", height: 150 }}
-                   keyExtractor={item => item.id}
-                   renderItem={({ item }) => (
-                       <Card>
-                           <Card.Title>
-                               {item.name.fi}
-                           </Card.Title>
-                           <Card.Divider />
-                           <Text style={{ marginBottom: 10 }}>
-                               Osoite: {item.location.address.street_address}
-                           </Text>
-                           <Text style={{ marginBottom: 10 }}>
-                               {item.where_when_duration.where_and_when}
-                           </Text>
-                        
-                           <SliderBox
-                               resizeMethod={'resize'}
-                               resizeMode={'cover'}
-                               parentWidth={280}
-                               paginationBoxVerticalPadding={20}
-                               autoplay
-                               circleLoop
-                               images={getImages(item.description.images)} />
-
-                       </Card>
-                   )}
-                   ItemSeparatorComponent={listSeparator} data={activities} />
-
-           </View>
-       </View>
+            <CheckBox
+                disabled={false}
+                value={
+                    selectedGats.indexOf(item) >= 0
+                }
+                onValueChange={(newValue) => { categoryChecklist(newValue, item) }}
+            //If oncheck value is true, add to list
+            />
+            <Text style={{ width: 80 }}>{item.name}</Text>
+        </View>
+    )
 
 
+    return (
 
-   );
+        <View style={styles.screen}>
+
+            <View style={styles.smallcontainer}>
+
+                <FlatList data={gats}
+                    keyExtractor={(item, index) => index.toString()}
+                    ItemSeparatorComponent={listSeparator}
+                    renderItem={renderItem}
+                    numColumns={2}
+                />
+            </View>
+            <View style={styles.smallcontainer}>
+               <Text>Select a category of which you wish to browse wide selection of feline figures</Text>
+                <Picker
+                    selectedValue={gatId}
+                    style={{ height: 50, width: 100 }}
+                    onValueChange={value => setGatId(value)}>
+                        {
+                        gats.map((item) => 
+                    <Picker.Item key={item.id} label={item.name} value={item.id} />)
+                        }
+                </Picker>
+                <Button title="Clear Filter" onPress={clearFilter}/>
+            </View>
+            <View style={styles.listcontainer}>
+                <FlatList
+                    style={{ marginLeft: "0%", height: 150 }}
+                    keyExtractor={item => item.id}
+                    renderItem={({ item }) => (
+                        <Card>
+                            <Card.Title>
+                                <Text>A Cat</Text>
+                            </Card.Title>
+                            <Card.Divider />
+                            <Image style={{ width: item.width, height: item.height, maxHeight: '100%', maxWidth: '100%' }} source={{ uri: item.url }} />
+
+
+                            {/* <SliderBox
+                                resizeMethod={'resize'}
+                                resizeMode={'cover'}
+                                parentWidth={280}
+                                paginationBoxVerticalPadding={20}
+                                autoplay
+                                circleLoop
+                                images={getImages(item.url)} /> */}
+
+                        </Card>
+                    )}
+                    ItemSeparatorComponent={listSeparator} data={cats} />
+
+            </View>
+        </View>
+
+
+
+    );
 }

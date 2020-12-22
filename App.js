@@ -7,6 +7,7 @@ import Mainpage from './pages/Mainpage';
 import Settings from './pages/Settings';
 import f1 from './pages/f1';
 import f2 from './pages/f2';
+import f3 from './pages/f3';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -15,8 +16,9 @@ function HomeStackScreen(){
   return (
     <Stack.Navigator>
       <Stack.Screen name="Home" component={Mainpage}/>
-      <Stack.Screen name="Api,Checklist,ImgSlider" component={f1}/>
-      <Stack.Screen name="Camera,SqLite" component={f2}/>
+      <Stack.Screen name="f1" component={f1}/>
+      <Stack.Screen name="f2" component={f2}/>
+      <Stack.Screen name="f3" component={f3}/>
     </Stack.Navigator>
   )
 }

@@ -50,8 +50,9 @@ export default function Main({ navigation }) {
           images={getImages(cats)} />
       </View>
       <View style={styles.smallcontainer}>
-        <Button title='Api_usage' onPress={() => { navigation.navigate('Api,Checklist,ImgSlider') }} />
-        <Button title='Camera,SqLite' onPress={() => { navigation.navigate('Camera,SqLite') }} />
+        <Button title='Api_usage' onPress={() => { navigation.navigate('f1') }} />
+        <Button title='under_construction' onPress={() => { navigation.navigate('f2') }} />
+        <Button title='Checklist' onPress={() => { navigation.navigate('f3') }} />
       </View>
     </View>
   );

@@ -1,94 +1,152 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, Button, Image, FlatList, Alert } from 'react-native';
-import { styles }  from '../stuff/Styles';
-import * as SQLite from 'expo-sqlite';
-import { Camera } from 'expo-camera';
+import React, { useState, useEffect } from 'react';
+import { Text, View, FlatList, Button } from 'react-native';
+import { Card, } from 'react-native-elements';
+import { styles } from '../stuff/Styles';
+import CheckBox from '@react-native-community/checkbox';
+import { catApi_key } from '../Private/config'
+import { Image } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 export default function f2() {
-const [hasCameraPermission, setPermission] =useState(null);
-const [photoName, setPhotoName] = useState('');
-const [photoBase64, setPhotoBase64] = useState('');
-const [pics, setPics] = useState ([]);
+    const [cats, setCats] = useState([]);
+    const [gats, setGats] = useState([]);
+    const [selectedGats, setSelectedGats] = useState([]);
+    const [gatId, setGatId] = useState('');
 
-const camera = useRef(null);
+   // let array = Object.values(gats);
 
-useEffect(() => {
-  askCameraPermission();
-}, []);
+    const fetchGats = () => {
+        let url = `https://api.thecatapi.com/v1/categories`
 
-const db = SQLite.openDatabase('picsdb.db')
-
-const updateList = () =>  {
-  db.transaction(tx => {
-    tx.executeSql('select * from pics;', [], (_, {rows}) =>
-    setPics(rows._array)
-    );
-  });
-}
-
-useEffect(()=> {
-  db.transaction(tx=> {
-    tx.executeSql('create table if not exists pics (id integer primary key not null, name text, base text);');
-  }, sqlError, updateList);
-})
-
-const askCameraPermission = async () => {
-  const { status } = await Camera.requestPermissionsAsync();
-  if (status === 'granted') {
-      setPermission(true)
-  }
-}
-  const snap = async () => {
-    if (camera) {
-      const photo = await camera.current.takePictureAsync({base64: true});
-      setPhotoName(photo.uri);
-      setPhotoBase64(photo.base64);
-
-      db.transaction(tx =>{
-        tx.executeSql('insert into pics (name, base) values (?, ?);',
-                    [photo.uri, photo.base64]);
-      }, sqlError, updateList)
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                setGats(data);
+            })
+            .catch((error) => {
+                Alert.alert('Something went wrong', error);
+            }) 
     }
-  }
-  const sqlError = (props) => {
-    console.log('SQLite error' + props )
-    Alert.alert('SQLite error', 'SQLite error in: ' + props,
-        [{ text: 'ok' },
-        { text: 'oh god' },
-        { text: 'what do?' }],
-        { cancelable: false })
-}
 
-  return (
-  
-        <View style={{flex:1}}>
-          {hasCameraPermission ?
-        (
-          <View style={{flex:1}}>
-            <Camera style={{flex:4}} ref={camera}/>
-            <View>
-              <Button title="Snap" onPress={snap}/>
-            </View>
-            <View style={{flex:4}}>
-            <FlatList
-            style={{marginLeft: "5%"}}
-            keyExtractor = {item => item.id.toString()}
-            renderItem={({item}) =>
-            <View>
-              <Text>{item.name}</Text>
-              <Image style={{flex:1}}
-              source={{uri: item.name}}/>
-            </View>
-          }
-          data ={pics}
+    const fetchCats = () => {
+        let url = `https://api.thecatapi.com/v1/images/search?category_ids=${gatId}&limit=3&api_key=${catApi_key}`
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                setCats(data);
+            })
+            .catch((error) => {
+                Alert.alert('Something went wrong', error);
+            })
+    }
+    useEffect(() => {
+        fetchGats();
+    }, []);
+    useEffect(() => {
+        fetchCats();
+    }, []);
+    useEffect(()=>{
+        fetchCats();
+    }, [gatId]);
+
+    const listSeparator = () => {
+        return (
+            <View style={{
+                height: 1,
+                width: "90%",
+                backgroundColor: "#CED0CE",
+                marginLeft: "10%"
+            }}
             />
+        )
+    }
+
+    //Change users selection of tags
+    const categoryChecklist = (newValue, tag) => {
+        if (newValue === true) {
+            setSelectedGats([...selectedGats, tag])
+        } else {
+            setSelectedGats(selectedGats.filter((current) => current !== tag))
+        }
+    }
+
+    const clearFilter = () => {
+        setGatId('')
+    }
+
+    const renderItem = ({ item }) => (
+        <View style={{ flexDirection: 'row' }}>
+
+            <CheckBox
+                disabled={false}
+                value={
+                    selectedGats.indexOf(item) >= 0
+                }
+                onValueChange={(newValue) => { categoryChecklist(newValue, item) }}
+            //If oncheck value is true, add to list
+            />
+            <Text style={{ width: 80 }}>{item.name}</Text>
+        </View>
+    )
+
+
+    return (
+
+        <View style={styles.screen}>
+
+            <View style={styles.smallcontainer}>
+
+                <FlatList data={gats}
+                    keyExtractor={(item, index) => index.toString()}
+                    ItemSeparatorComponent={listSeparator}
+                    renderItem={renderItem}
+                    numColumns={2}
+                />
             </View>
-          </View>
-        )   : ( <Text>No access to camera</Text>)}
-   
-      </View>
-  )}
- /*  <Image style={{flex:1}}
-              source={{uri:photoName}}/>
-              <Image style={{flex:1}}
-              source={{uri: `data:image/gif;base64,${photoBase64}`}}/> */
+            <View style={styles.smallcontainer}>
+               <Text>Select a category of which you wish to browse wide selection of feline figures</Text>
+                <Picker
+                    selectedValue={gatId}
+                    style={{ height: 50, width: 100 }}
+                    onValueChange={value => setGatId(value)}>
+                        {
+                        gats.map((item) => 
+                    <Picker.Item key={item.id} label={item.name} value={item.id} />)
+                        }
+                </Picker>
+                <Button title="Clear Filter" onPress={clearFilter}/>
+            </View>
+            <View style={styles.listcontainer}>
+                <FlatList
+                    style={{ marginLeft: "0%", height: 150 }}
+                    keyExtractor={item => item.id}
+                    renderItem={({ item }) => (
+                        <Card>
+                            <Card.Title>
+                                <Text>A Cat</Text>
+                            </Card.Title>
+                            <Card.Divider />
+                            <Image style={{ width: item.width, height: item.height, maxHeight: '100%', maxWidth: '100%' }} source={{ uri: item.url }} />
+
+
+                            {/* <SliderBox
+                                resizeMethod={'resize'}
+                                resizeMode={'cover'}
+                                parentWidth={280}
+                                paginationBoxVerticalPadding={20}
+                                autoplay
+                                circleLoop
+                                images={getImages(item.url)} /> */}
+
+                        </Card>
+                    )}
+                    ItemSeparatorComponent={listSeparator} data={cats} />
+
+            </View>
+        </View>
+
+
+
+    );
+}
